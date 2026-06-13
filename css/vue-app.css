@@ -1,0 +1,279 @@
+/* Shared styles for the Vue rewrite */
+
+.tt-view {
+	padding: 16px;
+	max-width: 100%;
+	overflow-x: auto;
+}
+
+.tt-toolbar {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 16px;
+	flex-wrap: wrap;
+}
+
+.tt-toolbar form {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.tt-input {
+	height: 34px;
+	border: 1px solid var(--color-border-dark, #ccc);
+	border-radius: var(--border-radius, 3px);
+	padding: 0 8px;
+	background: var(--color-main-background, #fff);
+	color: var(--color-main-text, #000);
+	font-size: 14px;
+}
+
+.tt-input:focus {
+	outline: 2px solid var(--color-primary, #0082c9);
+	border-color: var(--color-primary, #0082c9);
+}
+
+.tt-input-small {
+	width: 100px;
+}
+
+.tt-select {
+	height: 34px;
+	border: 1px solid var(--color-border-dark, #ccc);
+	border-radius: var(--border-radius, 3px);
+	padding: 0 8px;
+	background: var(--color-main-background, #fff);
+	color: var(--color-main-text, #000);
+	font-size: 14px;
+	cursor: pointer;
+}
+
+.tt-work-input {
+	width: 300px;
+}
+
+.tt-color-picker {
+	height: 34px;
+	width: 50px;
+	border: 1px solid var(--color-border-dark, #ccc);
+	border-radius: var(--border-radius, 3px);
+	padding: 2px;
+	cursor: pointer;
+}
+
+.tt-color-dot {
+	display: inline-block;
+	width: 16px;
+	height: 16px;
+	border-radius: 50%;
+	border: 1px solid var(--color-border, #ddd);
+}
+
+.tt-table {
+	width: 100%;
+	border-collapse: collapse;
+	margin-top: 8px;
+}
+
+.tt-table th,
+.tt-table td {
+	text-align: left;
+	padding: 8px 12px;
+	border-bottom: 1px solid var(--color-border, #ddd);
+}
+
+.tt-table th {
+	font-weight: bold;
+	background: var(--color-background-dark, #f5f5f5);
+}
+
+.tt-table tr:hover td {
+	background: var(--color-background-hover, #f5f5f5);
+}
+
+.tt-actions {
+	white-space: nowrap;
+}
+
+.tt-checkbox-label {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin: 8px 0;
+	cursor: pointer;
+}
+
+/* Modal content */
+.tt-modal-body {
+	padding: 24px;
+	min-width: 320px;
+}
+
+.tt-modal-body h2 {
+	font-size: 1.2em;
+	font-weight: bold;
+	margin-bottom: 16px;
+}
+
+.tt-modal-body label {
+	display: block;
+	margin-bottom: 12px;
+	font-weight: 500;
+}
+
+.tt-modal-body label .tt-input,
+.tt-modal-body label .tt-select {
+	display: block;
+	width: 100%;
+	margin-top: 4px;
+}
+
+.tt-modal-actions {
+	display: flex;
+	gap: 8px;
+	margin-top: 20px;
+	justify-content: flex-end;
+}
+
+.tt-textarea {
+	width: 100%;
+	border: 1px solid var(--color-border-dark, #ccc);
+	border-radius: var(--border-radius, 3px);
+	padding: 8px;
+	background: var(--color-main-background, #fff);
+	color: var(--color-main-text, #000);
+	font-size: 14px;
+	resize: vertical;
+}
+
+/* Date range controls */
+.tt-date-range {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+	margin-bottom: 12px;
+}
+
+.tt-quick-ranges {
+	display: flex;
+	gap: 4px;
+	flex-wrap: wrap;
+}
+
+.tt-report-controls {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	margin-bottom: 12px;
+}
+
+.tt-report-controls label {
+	display: flex;
+	flex-direction: column;
+	font-size: 0.85em;
+}
+
+.tt-report-controls .tt-select {
+	margin-top: 4px;
+}
+
+.tt-report-export {
+	display: flex;
+	gap: 8px;
+	margin-bottom: 12px;
+}
+
+/* Work intervals (timer page) */
+.day-work-intervals {
+	margin-bottom: 16px;
+}
+
+.day-name {
+	font-weight: bold;
+	font-size: 1.05em;
+	padding: 6px 0;
+	border-bottom: 2px solid var(--color-border, #ddd);
+	margin-bottom: 8px;
+}
+
+.work-item {
+	margin-bottom: 8px;
+}
+
+.work-item-header {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 4px 0;
+}
+
+.wi-len {
+	width: 24px;
+	text-align: center;
+	font-size: 0.8em;
+	background: var(--color-background-dark, #eee);
+	border-radius: 50%;
+}
+
+.wi-name {
+	flex: 1;
+	font-weight: 500;
+}
+
+.wi-duration {
+	font-size: 0.9em;
+	color: var(--color-text-maxcontrast);
+}
+
+.wi-child-element {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+	padding: 4px 0 4px 32px;
+	border-bottom: 1px solid var(--color-border, #eee);
+}
+
+.wi-child-name {
+	flex: 1;
+	min-width: 150px;
+	cursor: pointer;
+}
+
+.wi-child-name:hover {
+	text-decoration: underline;
+}
+
+.wi-child-details {
+	font-size: 0.8em;
+	color: var(--color-text-maxcontrast);
+}
+
+.wi-child-duration {
+	font-size: 0.9em;
+	min-width: 80px;
+	text-align: right;
+}
+
+.wi-trash,
+.wi-resume {
+	cursor: pointer;
+	color: var(--color-text-maxcontrast);
+	padding: 4px;
+}
+
+.wi-trash:hover {
+	color: var(--color-error, red);
+}
+
+.wi-resume:hover {
+	color: var(--color-primary, #0082c9);
+}
+
+#work-intervals {
+	padding: 0 16px;
+}
