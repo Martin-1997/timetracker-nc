@@ -2,12 +2,7 @@
 	<div class="tt-view">
 		<div class="tt-toolbar">
 			<form @submit.prevent="addClient">
-				<input
-					v-model="newName"
-					type="text"
-					placeholder="Client name"
-					class="tt-input"
-				>
+				<NcTextField v-model="newName" label="Client name" placeholder="Client name" />
 				<NcButton type="primary" native-type="submit" :disabled="!newName.trim()">
 					Add Client
 				</NcButton>
@@ -32,13 +27,13 @@
 						<NcActions>
 							<NcActionButton @click="openEdit(client)">
 								<template #icon>
-									<span class="icon-rename" />
+									<NcIconSvgWrapper :path="mdiPencil" :size="20" />
 								</template>
 								Edit
 							</NcActionButton>
 							<NcActionButton @click="openDelete(client)">
 								<template #icon>
-									<span class="icon-delete" />
+									<NcIconSvgWrapper :path="mdiDelete" :size="20" />
 								</template>
 								Delete
 							</NcActionButton>
@@ -51,10 +46,7 @@
 		<NcModal v-if="showEdit" name="Edit client" @close="showEdit = false">
 			<div class="tt-modal-body">
 				<h2>Edit client</h2>
-				<label>
-					Name
-					<input v-model="editName" type="text" class="tt-input">
-				</label>
+				<NcTextField v-model="editName" label="Name" />
 				<div class="tt-modal-actions">
 					<NcButton type="primary" @click="saveEdit">
 						Save
@@ -85,7 +77,10 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { NcButton, NcModal, NcActions, NcActionButton, NcLoadingIcon } from '@nextcloud/vue'
+import { NcButton, NcModal, NcActions, NcActionButton, NcLoadingIcon, NcTextField, NcIconSvgWrapper } from '@nextcloud/vue'
+
+const mdiPencil = 'M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z'
+const mdiDelete = 'M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z'
 import api from '../api/index.js'
 
 const clients = ref([])

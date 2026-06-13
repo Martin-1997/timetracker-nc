@@ -2,12 +2,7 @@
 	<div class="tt-view">
 		<div class="tt-toolbar">
 			<form @submit.prevent="addProject">
-				<input
-					v-model="newName"
-					type="text"
-					placeholder="Project name"
-					class="tt-input"
-				>
+				<NcTextField v-model="newName" label="Project name" placeholder="Project name" />
 				<select v-model="newClientId" class="tt-select">
 					<option value="">No client</option>
 					<option v-for="c in clients" :key="c.id" :value="c.id">
@@ -73,13 +68,13 @@
 						<NcActions>
 							<NcActionButton @click="openEdit(project)">
 								<template #icon>
-									<span class="icon-rename" />
+									<NcIconSvgWrapper :path="mdiPencil" :size="20" />
 								</template>
 								Edit
 							</NcActionButton>
 							<NcActionButton v-if="isAdmin" @click="openDelete(project)">
 								<template #icon>
-									<span class="icon-delete" />
+									<NcIconSvgWrapper :path="mdiDelete" :size="20" />
 								</template>
 								Delete
 							</NcActionButton>
@@ -93,10 +88,7 @@
 		<NcModal v-if="showEdit" name="Edit project" size="large" @close="showEdit = false">
 			<div class="tt-modal-body">
 				<h2>Edit project</h2>
-				<label>
-					Name
-					<input v-model="editProject.name" type="text" class="tt-input">
-				</label>
+				<NcTextField v-model="editProject.name" label="Name" />
 				<label>
 					Client
 					<select v-model="editProject.clientId" class="tt-select">
@@ -172,7 +164,10 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { NcButton, NcModal, NcActions, NcActionButton, NcLoadingIcon } from '@nextcloud/vue'
+import { NcButton, NcModal, NcActions, NcActionButton, NcLoadingIcon, NcTextField, NcIconSvgWrapper } from '@nextcloud/vue'
+
+const mdiPencil = 'M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z'
+const mdiDelete = 'M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z'
 import api from '../api/index.js'
 
 const isAdmin = window.oc_isadmin ?? false

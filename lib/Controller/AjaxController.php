@@ -1285,27 +1285,29 @@ class AjaxController extends Controller {
 		$ret = [];
 		foreach($goals as $goal){
 			$rgoal = [];
-			if ($goal->interval == 'Weekly'){
+			$intervalLower = strtolower($goal->interval);
+			if ($intervalLower == 'weekly'){
 				$goalWeekStart = $this->getStartOfWeek($goal->createdAt);
 				$repItems = $this->reportItemMapper->report($this->userId, $goalWeekStart->getTimestamp(),time(),[$goal->projectId],"","","week","project","",false,0,10000);
 				$intervals = $this->getWeeksSince($goalWeekStart->getTimestamp());
-			} elseif ($goal->interval == 'Monthly'){
+			} elseif ($intervalLower == 'monthly'){
 				$goalMonthStart = $this->getStartOfMonth($goal->createdAt);
 				$repItems = $this->reportItemMapper->report($this->userId, $goalMonthStart->getTimestamp(),time(),[$goal->projectId],"","","month","project","",false,0,10000);
 				$intervals = $this->getMonthsSince($goalMonthStart->getTimestamp());
-
+			} else {
+				$repItems = [];
+				$intervals = [];
 			}
 			$workedSecondsCurrentPeriod = 0;
 			$debtSeconds = 0;
 			foreach($intervals as $interval){
 				$workedInInterval = 0;
 				foreach($repItems as $repItem) {
-
-					if ($goal->interval == 'Weekly'){
+					if ($intervalLower == 'weekly'){
 						if ($interval == $this->getStartOfWeek($repItem->time)->format('Y-m-d')) {
 							$workedInInterval += $repItem->totalDuration;
 						}
-					} elseif ($goal->interval == 'Monthly'){
+					} elseif ($intervalLower == 'monthly'){
 						if ($interval == $this->getStartOfMonth($repItem->time)->format('Y-m')) {
 							$workedInInterval += $repItem->totalDuration;
 						}
@@ -1315,9 +1317,9 @@ class AjaxController extends Controller {
 			}
 
 			foreach($repItems as $period){
-				if ($goal->interval == 'Weekly' && $this->getStartOfWeek($period->time)->format('Y-m-d') == $weekStart){
+				if ($intervalLower == 'weekly' && $this->getStartOfWeek($period->time)->format('Y-m-d') == $weekStart){
 					$workedSecondsCurrentPeriod += $period->totalDuration;
-				} elseif ($goal->interval == 'Monthly' && $this->getStartOfMonth($period->time)->format('Y-m') == $monthStart){
+				} elseif ($intervalLower == 'monthly' && $this->getStartOfMonth($period->time)->format('Y-m') == $monthStart){
 					$workedSecondsCurrentPeriod += $period->totalDuration;
 				}
 			}

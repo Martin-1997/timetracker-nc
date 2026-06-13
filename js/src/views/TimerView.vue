@@ -4,15 +4,11 @@
 		<div id="top-work-bar">
 			<div id="work-input-container">
 				<form @submit.prevent="startOrStop">
-					<input
+					<NcTextField
 						v-model="workName"
-						type="text"
-						spellcheck="false"
-						autocomplete="off"
+						label="What have you done?"
 						placeholder="What have you done?"
-						id="work-input"
-						class="tt-input tt-work-input"
-					>
+					/>
 				</form>
 			</div>
 
@@ -116,10 +112,11 @@
 											{{ truncate(child.details, 64) }}
 										</div>
 									</div>
-									<span
-										class="fas clickable fa-trash wi-trash"
-										@click="openDeleteWorkItem(child)"
-									/>
+									<NcButton variant="tertiary" aria-label="Delete" class="wi-trash" @click="openDeleteWorkItem(child)">
+										<template #icon>
+											<NcIconSvgWrapper :path="mdiTrashCan" :size="18" />
+										</template>
+									</NcButton>
 									<!-- Project select inline -->
 									<select
 										class="tt-select tt-project-select-inline"
@@ -179,10 +176,11 @@
 										{{ child.running ? 'running...' : formatDuration(child.duration) }}
 									</div>
 									<!-- Resume button -->
-									<span
-										class="fas clickable fa-play wi-resume"
-										@click="resumeWorkItem(child)"
-									/>
+									<NcButton variant="tertiary" aria-label="Resume" class="wi-resume" @click="resumeWorkItem(child)">
+										<template #icon>
+											<NcIconSvgWrapper :path="mdiPlay" :size="18" />
+										</template>
+									</NcButton>
 								</div>
 							</div>
 						</li>
@@ -195,10 +193,7 @@
 		<NcModal v-if="showEdit" name="Edit work item" @close="showEdit = false">
 			<div class="tt-modal-body">
 				<h2>Edit work item</h2>
-				<label>
-					Name
-					<input v-model="editItem.name" type="text" class="tt-input">
-				</label>
+				<NcTextField v-model="editItem.name" label="Name" />
 				<label>
 					Details
 					<textarea v-model="editItem.details" class="tt-textarea" rows="4" />
@@ -218,10 +213,7 @@
 		<NcModal v-if="showManualEntry" name="Add work item" @close="showManualEntry = false">
 			<div class="tt-modal-body">
 				<h2>Add work item</h2>
-				<label>
-					Name
-					<input v-model="manualName" type="text" class="tt-input">
-				</label>
+				<NcTextField v-model="manualName" label="Name" />
 				<label>
 					Details
 					<textarea v-model="manualDetails" class="tt-textarea" rows="3" />
@@ -269,12 +261,13 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { NcButton, NcModal, NcLoadingIcon, NcDateTimePicker, NcIconSvgWrapper } from '@nextcloud/vue'
+import { NcButton, NcModal, NcLoadingIcon, NcDateTimePicker, NcIconSvgWrapper, NcTextField } from '@nextcloud/vue'
 import api from '../api/index.js'
 import { startOfDay, endOfDay } from '../utils/date.js'
 
 const mdiPlay = 'M8,5.14V19.14L19,12.14L8,5.14Z'
 const mdiStop = 'M18,18H6V6H18V18Z'
+const mdiTrashCan = 'M9,3V4H4V6H5V19A2,2 0 0,0 7,21H17A2,2 0 0,0 19,19V6H20V4H15V3H9M7,6H17V19H7V6M9,8V17H11V8H9M13,8V17H15V8H13Z'
 
 // --- Date range ---
 const today = new Date()

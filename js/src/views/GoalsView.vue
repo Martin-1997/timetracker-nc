@@ -59,7 +59,7 @@
 						<NcActions>
 							<NcActionButton @click="openDelete(goal)">
 								<template #icon>
-									<span class="icon-delete" />
+									<NcIconSvgWrapper :path="mdiDelete" :size="20" />
 								</template>
 								Delete
 							</NcActionButton>
@@ -88,7 +88,9 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { NcButton, NcModal, NcActions, NcActionButton, NcLoadingIcon } from '@nextcloud/vue'
+import { NcButton, NcModal, NcActions, NcActionButton, NcLoadingIcon, NcIconSvgWrapper } from '@nextcloud/vue'
+
+const mdiDelete = 'M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z'
 import api from '../api/index.js'
 
 const goals = ref([])
