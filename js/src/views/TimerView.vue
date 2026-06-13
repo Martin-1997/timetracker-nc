@@ -257,12 +257,12 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { NcButton, NcModal, NcLoadingIcon } from '@nextcloud/vue'
 import api from '../api/index.js'
+import { localDateStr, localDatetimeStr, dateStrToUnixStart, dateStrToUnixEnd } from '../utils/date.js'
 
 // --- Date range ---
 const today = new Date()
-const thirtyAgo = new Date(today.getTime() - 29 * 86400000)
-const startDate = ref(thirtyAgo.toISOString().split('T')[0])
-const endDate = ref(today.toISOString().split('T')[0])
+const startDate = ref(localDateStr(new Date(today.getTime() - 29 * 86400000)))
+const endDate = ref(localDateStr(today))
 
 // --- Input state ---
 const workName = ref('')
@@ -326,8 +326,7 @@ function truncate(s, n) {
 }
 
 function toDatetimeLocal(unixTs) {
-	const d = new Date(unixTs * 1000)
-	return d.toISOString().slice(0, 16)
+	return localDatetimeStr(new Date(unixTs * 1000))
 }
 
 function toManualFormat(dt) {
@@ -338,8 +337,8 @@ function toManualFormat(dt) {
 
 function setRange(daysBack) {
 	const now = new Date()
-	startDate.value = new Date(now.getTime() - daysBack * 86400000).toISOString().split('T')[0]
-	endDate.value = now.toISOString().split('T')[0]
+	startDate.value = localDateStr(new Date(now.getTime() - daysBack * 86400000))
+	endDate.value = localDateStr(now)
 	fetchWorkItems()
 }
 
@@ -355,8 +354,8 @@ function startTick() {
 // --- API actions ---
 async function fetchWorkItems() {
 	loading.value = true
-	const from = Math.floor(new Date(startDate.value).getTime() / 1000)
-	const to = Math.floor(new Date(endDate.value + 'T23:59:59').getTime() / 1000)
+	const from = dateStrToUnixStart(startDate.value)
+	const to = dateStrToUnixEnd(endDate.value)
 	const { data } = await api.getWorkIntervals(from, to)
 	workData.value = data
 	loading.value = false
@@ -505,8 +504,8 @@ onMounted(async () => {
 
 	// Initialize manual entry datetime to now
 	const now = new Date()
-	manualStart.value = now.toISOString().slice(0, 16)
-	manualEnd.value = now.toISOString().slice(0, 16)
+	manualStart.value = localDatetimeStr(now)
+	manualEnd.value = localDatetimeStr(now)
 })
 
 onUnmounted(() => {

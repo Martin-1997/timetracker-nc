@@ -129,11 +129,11 @@
 import { ref, computed, onMounted } from 'vue'
 import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 import api from '../api/index.js'
+import { localDateStr, dateStrToUnixStart, dateStrToUnixEnd } from '../utils/date.js'
 
 const today = new Date()
-const thirtyAgo = new Date(today.getTime() - 29 * 86400000)
-const startDate = ref(thirtyAgo.toISOString().split('T')[0])
-const endDate = ref(today.toISOString().split('T')[0])
+const startDate = ref(localDateStr(new Date(today.getTime() - 29 * 86400000)))
+const endDate = ref(localDateStr(today))
 
 const group1 = ref('project')
 const group2 = ref('user')
@@ -150,15 +150,15 @@ const totalDuration = computed(() => items.value.reduce((s, i) => s + i.totalDur
 
 function setRange(daysBack) {
 	const now = new Date()
-	startDate.value = new Date(now.getTime() - daysBack * 86400000).toISOString().split('T')[0]
-	endDate.value = now.toISOString().split('T')[0]
+	startDate.value = localDateStr(new Date(now.getTime() - daysBack * 86400000))
+	endDate.value = localDateStr(now)
 	fetchReport()
 }
 
 function setThisMonth() {
 	const now = new Date()
-	startDate.value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]
-	endDate.value = now.toISOString().split('T')[0]
+	startDate.value = localDateStr(new Date(now.getFullYear(), now.getMonth(), 1))
+	endDate.value = localDateStr(now)
 	fetchReport()
 }
 
@@ -186,8 +186,8 @@ function formatDuration(seconds) {
 
 async function fetchReport() {
 	loading.value = true
-	const from = Math.floor(new Date(startDate.value).getTime() / 1000)
-	const to = Math.floor(new Date(endDate.value + 'T23:59:59').getTime() / 1000)
+	const from = dateStrToUnixStart(startDate.value)
+	const to = dateStrToUnixEnd(endDate.value)
 	const { data } = await api.getReport({
 		name: '',
 		from,

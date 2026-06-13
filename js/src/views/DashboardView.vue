@@ -51,14 +51,13 @@ import { ref, onMounted } from 'vue'
 import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 import { Chart, DoughnutController, ArcElement, Tooltip, Legend } from 'chart.js'
 import api from '../api/index.js'
+import { localDateStr, dateStrToUnixStart, dateStrToUnixEnd } from '../utils/date.js'
 
 Chart.register(DoughnutController, ArcElement, Tooltip, Legend)
 
 const today = new Date()
-const thirtyAgo = new Date(today.getTime() - 29 * 86400000)
-
-const startDate = ref(thirtyAgo.toISOString().split('T')[0])
-const endDate = ref(today.toISOString().split('T')[0])
+const startDate = ref(localDateStr(new Date(today.getTime() - 29 * 86400000)))
+const endDate = ref(localDateStr(today))
 const loading = ref(false)
 const summary = ref('')
 
@@ -72,32 +71,31 @@ const COLORS = [
 	'#E67300', '#8B0707', '#329262', '#5574A6',
 ]
 
-function setRange(daysBack, daysForward) {
+function setRange(daysBack) {
 	const now = new Date()
-	const start = new Date(now.getTime() - daysBack * 86400000)
-	startDate.value = start.toISOString().split('T')[0]
-	endDate.value = now.toISOString().split('T')[0]
+	startDate.value = localDateStr(new Date(now.getTime() - daysBack * 86400000))
+	endDate.value = localDateStr(now)
 	fetchData()
 }
 
 function setThisMonth() {
 	const now = new Date()
-	startDate.value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]
-	endDate.value = now.toISOString().split('T')[0]
+	startDate.value = localDateStr(new Date(now.getFullYear(), now.getMonth(), 1))
+	endDate.value = localDateStr(now)
 	fetchData()
 }
 
 function setThisYear() {
 	const now = new Date()
-	startDate.value = new Date(now.getFullYear(), 0, 1).toISOString().split('T')[0]
-	endDate.value = now.toISOString().split('T')[0]
+	startDate.value = localDateStr(new Date(now.getFullYear(), 0, 1))
+	endDate.value = localDateStr(now)
 	fetchData()
 }
 
 async function fetchData() {
 	loading.value = true
-	const from = Math.floor(new Date(startDate.value).getTime() / 1000)
-	const to = Math.floor(new Date(endDate.value + 'T23:59:59').getTime() / 1000)
+	const from = dateStrToUnixStart(startDate.value)
+	const to = dateStrToUnixEnd(endDate.value)
 
 	const { data } = await api.getReport({ from, to, group1: 'client', group2: 'project', timegroup: '', name: '' })
 	loading.value = false
