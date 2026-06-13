@@ -1,5 +1,4 @@
 const { VueLoaderPlugin } = require('vue-loader')
-const webpack = require('webpack')
 const path = require('path')
 
 module.exports = {
@@ -13,12 +12,6 @@ module.exports = {
   },
   resolve: {
     extensions: ['.js', '.vue'],
-    alias: {
-      // Replace Vue 2-only @linusborg/vue-simple-portal with a Vue 3 compatible shim.
-      // @nextcloud/vue 8.x depends on it but the 0.1.5 version calls Vue.extend()
-      // at module load time, which crashes with Vue 3 (no default export).
-      '@linusborg/vue-simple-portal': path.resolve(__dirname, 'shims/vue-simple-portal.js'),
-    },
   },
   module: {
     rules: [
@@ -38,9 +31,5 @@ module.exports = {
   },
   plugins: [
     new VueLoaderPlugin(),
-    new webpack.DefinePlugin({
-      appName: JSON.stringify('timetracker'),
-      appVersion: JSON.stringify('0.0.86'),
-    }),
   ],
 }
