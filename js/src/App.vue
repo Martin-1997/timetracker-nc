@@ -1,6 +1,21 @@
 <template>
 	<NcContent app-name="timetracker">
-		<NcAppNavigation>
+		<NcAppNavigation aria-label="Timetracker navigation">
+			<!-- Custom close button at the top of the nav panel -->
+			<template #default>
+				<div class="tt-nav-header">
+					<NcButton
+						variant="tertiary"
+						aria-label="Close navigation"
+						title="Close navigation"
+						@click="closeNav"
+					>
+						<template #icon>
+							<NcIconSvgWrapper :path="mdiMenuOpen" :size="20" />
+						</template>
+					</NcButton>
+				</div>
+			</template>
 			<template #list>
 				<NcAppNavigationItem name="Timer" :to="{ path: '/timer' }">
 					<template #icon>
@@ -56,10 +71,18 @@
 </template>
 
 <script setup>
-import { NcContent, NcAppNavigation, NcAppNavigationItem, NcAppContent } from '@nextcloud/vue'
+import { NcContent, NcAppNavigation, NcAppNavigationItem, NcAppContent, NcButton, NcIconSvgWrapper } from '@nextcloud/vue'
 import { RouterView } from 'vue-router'
+import { emit } from '@nextcloud/event-bus'
 
 const isAdmin = window.oc_isadmin ?? false
+
+// MDI path for the "menu open" (hamburger with arrow) icon — same one NcAppNavigationToggle uses
+const mdiMenuOpen = 'M21,15.61L19.59,17L14.58,12L19.59,7L21,8.39L17.44,12L21,15.61M3,6H16V8H3V6M3,13V11H13V13H3M3,18V16H16V18H3Z'
+
+function closeNav() {
+	emit('toggle-navigation', { open: false })
+}
 </script>
 
 <style>
@@ -67,5 +90,25 @@ const isAdmin = window.oc_isadmin ?? false
 	height: 100%;
 	display: flex;
 	flex-direction: column;
+}
+
+/* Close button at top of the nav panel */
+.tt-nav-header {
+	display: flex;
+	justify-content: flex-end;
+	padding: var(--app-navigation-padding, 8px) var(--app-navigation-padding, 8px) 0;
+}
+
+/* When nav is OPEN: hide the built-in NcAppNavigationToggle (our close button handles it) */
+#timetracker-app .app-navigation:not(.app-navigation--closed) .app-navigation-toggle-wrapper {
+	display: none;
+}
+
+/* When nav is CLOSED: restore the built-in toggle to its original position so it stays
+   visible at the left edge of the content area and can be clicked to reopen the nav */
+#timetracker-app .app-navigation--closed .app-navigation-toggle-wrapper {
+	display: block;
+	inset-inline-end: calc(0px - var(--app-navigation-padding, 8px));
+	margin-inline-end: calc(-1 * var(--default-clickable-area, 44px));
 }
 </style>

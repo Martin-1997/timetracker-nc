@@ -296,15 +296,3 @@
 	padding: 0 16px;
 }
 
-/* Nav toggle: sit at the right edge of the nav panel when open (not floating into content) */
-#timetracker-app .app-navigation-toggle-wrapper {
-	inset-inline-end: 0;
-	margin-inline-end: 0;
-	z-index: 10;
-}
-
-/* Nav toggle: extend 44 px into the content area when the nav is closed so it stays
-   visible and clickable (NcContent has overflow:hidden which clips it otherwise) */
-#timetracker-app .app-navigation--closed .app-navigation-toggle-wrapper {
-	inset-inline-end: calc(-1 * var(--default-clickable-area));
-}
