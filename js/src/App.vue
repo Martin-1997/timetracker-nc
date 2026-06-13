@@ -63,7 +63,6 @@ const isAdmin = window.oc_isadmin ?? false
 </script>
 
 <style>
-/* Ensure the Vue app fills the content area */
 #timetracker-app {
 	height: 100%;
 	display: flex;
