@@ -277,3 +277,10 @@
 #work-intervals {
 	padding: 0 16px;
 }
+
+/* Move the nav toggle button inside the nav panel (top-right corner)
+   instead of the default which floats it 44px outside into the content area */
+#timetracker-app .app-navigation-toggle-wrapper {
+	inset-inline-end: 0;
+	margin-inline-end: 0;
+}
