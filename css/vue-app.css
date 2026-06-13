@@ -4,6 +4,13 @@
 	padding: 16px;
 	max-width: 100%;
 	overflow-x: auto;
+	transition: padding-top var(--animation-quick, 100ms);
+}
+
+/* When nav is closed the reopen button sits at top:8px, height:44px in the content area.
+   Add padding-top so content begins below the button (8 + 44 + 8 gap = 60px). */
+#timetracker-app .app-navigation--closed ~ #app-content-vue .tt-view {
+	padding-top: calc(var(--app-navigation-padding, 8px) + var(--default-clickable-area, 44px) + 8px);
 }
 
 .tt-toolbar {
