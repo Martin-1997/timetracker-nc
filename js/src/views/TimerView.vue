@@ -17,13 +17,13 @@
 			</div>
 
 			<div class="tt-top-selects">
-				<select v-model="selectedProjectId" class="tt-select tt-project-select" @change="onNewProjectChange">
+				<select v-model="selectedProjectId" class="tt-select tt-project-select" aria-label="Project" @change="onNewProjectChange">
 					<option value="">No project</option>
 					<option v-for="p in projects" :key="p.id" :value="p.id">
 						{{ p.name }}
 					</option>
 				</select>
-				<select v-model="selectedTagIds" class="tt-select" multiple size="1" @change="onNewTagChange">
+				<select v-model="selectedTagIds" class="tt-select" multiple size="1" aria-label="Tags" @change="onNewTagChange">
 					<option v-for="t in tags" :key="t.id" :value="t.id">
 						{{ t.name }}
 					</option>
@@ -34,14 +34,16 @@
 				<div id="timer">
 					{{ timerDisplay }}
 				</div>
-				<button
+				<NcButton
 					id="start-tracking"
-					class="ui-button ui-widget ui-corner-all ui-button-icon-only"
-					:title="isRunning ? 'Stop' : 'Start'"
+					variant="tertiary"
+					:aria-label="isRunning ? 'Stop timer' : 'Start timer'"
 					@click.prevent="startOrStop"
 				>
-					<span :class="isRunning ? 'my-icon stop-button' : 'my-icon play-button'" />
-				</button>
+					<template #icon>
+						<NcIconSvgWrapper :path="isRunning ? mdiStop : mdiPlay" :size="22" />
+					</template>
+				</NcButton>
 			</div>
 		</div>
 
@@ -51,9 +53,19 @@
 				Manual entry
 			</NcButton>
 			<div class="tt-date-range">
-				<input v-model="startDate" type="date" class="tt-input" @change="fetchWorkItems">
+				<NcDateTimePicker
+					v-model="startDate"
+					type="date"
+					append-to-body
+					@update:model-value="fetchWorkItems"
+				/>
 				<span>–</span>
-				<input v-model="endDate" type="date" class="tt-input" @change="fetchWorkItems">
+				<NcDateTimePicker
+					v-model="endDate"
+					type="date"
+					append-to-body
+					@update:model-value="fetchWorkItems"
+				/>
 				<div class="tt-quick-ranges">
 					<NcButton size="small" @click="setRange(0)">
 						Today
@@ -145,20 +157,22 @@
 									>
 									<!-- Time range (editable) -->
 									<div class="wi-child-hours">
-										<input
-											type="datetime-local"
-											:value="toDatetimeLocal(child.start)"
-											class="tt-input tt-datetime-input"
-											@change="updateChildStart(child, $event.target.value)"
-										>
+										<NcDateTimePicker
+											type="datetime"
+											:minute-step="1"
+											:model-value="new Date(child.start * 1000)"
+											append-to-body
+											@update:model-value="updateChildStart(child, $event)"
+										/>
 										<span>–</span>
-										<input
+										<NcDateTimePicker
 											v-if="!child.running"
-											type="datetime-local"
-											:value="toDatetimeLocal(child.start + child.duration)"
-											class="tt-input tt-datetime-input"
-											@change="updateChildEnd(child, $event.target.value)"
-										>
+											type="datetime"
+											:minute-step="1"
+											:model-value="new Date((child.start + child.duration) * 1000)"
+											append-to-body
+											@update:model-value="updateChildEnd(child, $event)"
+										/>
 										<span v-else class="tt-running-label">running...</span>
 									</div>
 									<div class="wi-child-duration">
@@ -214,11 +228,11 @@
 				</label>
 				<label>
 					Start
-					<input v-model="manualStart" type="datetime-local" class="tt-input">
+					<NcDateTimePicker v-model="manualStart" type="datetime" :minute-step="1" append-to-body />
 				</label>
 				<label>
 					End
-					<input v-model="manualEnd" type="datetime-local" class="tt-input">
+					<NcDateTimePicker v-model="manualEnd" type="datetime" :minute-step="1" append-to-body />
 				</label>
 				<div class="tt-modal-actions">
 					<NcButton
@@ -255,14 +269,17 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { NcButton, NcModal, NcLoadingIcon } from '@nextcloud/vue'
+import { NcButton, NcModal, NcLoadingIcon, NcDateTimePicker, NcIconSvgWrapper } from '@nextcloud/vue'
 import api from '../api/index.js'
-import { localDateStr, localDatetimeStr, dateStrToUnixStart, dateStrToUnixEnd } from '../utils/date.js'
+import { startOfDay, endOfDay } from '../utils/date.js'
+
+const mdiPlay = 'M8,5.14V19.14L19,12.14L8,5.14Z'
+const mdiStop = 'M18,18H6V6H18V18Z'
 
 // --- Date range ---
 const today = new Date()
-const startDate = ref(localDateStr(new Date(today.getTime() - 29 * 86400000)))
-const endDate = ref(localDateStr(today))
+const startDate = ref(new Date(today.getTime() - 29 * 86400000))
+const endDate = ref(new Date(today))
 
 // --- Input state ---
 const workName = ref('')
@@ -288,8 +305,8 @@ const editItem = ref({ id: null, name: '', details: '' })
 const showManualEntry = ref(false)
 const manualName = ref('')
 const manualDetails = ref('')
-const manualStart = ref('')
-const manualEnd = ref('')
+const manualStart = ref(new Date())
+const manualEnd = ref(new Date())
 
 const showDeleteWorkItem = ref(false)
 const deleteWorkItemTarget = ref(null)
@@ -325,20 +342,15 @@ function truncate(s, n) {
 	return s.length < n ? s : s.substring(0, n - 4) + ' ...'
 }
 
-function toDatetimeLocal(unixTs) {
-	return localDatetimeStr(new Date(unixTs * 1000))
-}
-
-function toManualFormat(dt) {
-	const d = new Date(dt)
+function toManualFormat(date) {
 	const pad = (n) => String(n).padStart(2, '0')
-	return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${String(d.getFullYear()).slice(2)} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+	return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${String(date.getFullYear()).slice(2)} ${pad(date.getHours())}:${pad(date.getMinutes())}`
 }
 
 function setRange(daysBack) {
 	const now = new Date()
-	startDate.value = localDateStr(new Date(now.getTime() - daysBack * 86400000))
-	endDate.value = localDateStr(now)
+	startDate.value = new Date(now.getTime() - daysBack * 86400000)
+	endDate.value = new Date(now)
 	fetchWorkItems()
 }
 
@@ -354,8 +366,8 @@ function startTick() {
 // --- API actions ---
 async function fetchWorkItems() {
 	loading.value = true
-	const from = dateStrToUnixStart(startDate.value)
-	const to = dateStrToUnixEnd(endDate.value)
+	const from = startOfDay(startDate.value)
+	const to = endOfDay(endDate.value)
 	const { data } = await api.getWorkIntervals(from, to)
 	workData.value = data
 	loading.value = false
@@ -432,8 +444,8 @@ async function addManualEntry() {
 	showManualEntry.value = false
 	manualName.value = ''
 	manualDetails.value = ''
-	manualStart.value = ''
-	manualEnd.value = ''
+	manualStart.value = new Date()
+	manualEnd.value = new Date()
 	await fetchWorkItems()
 }
 
@@ -467,34 +479,28 @@ async function updateChildCost(child, costStr) {
 	await fetchWorkItems()
 }
 
-async function updateChildStart(child, datetimeLocalStr) {
+async function updateChildStart(child, newStartDate) {
 	const end = new Date((child.start + child.duration) * 1000)
-	const newStart = new Date(datetimeLocalStr)
 	await api.updateWorkInterval(child.id, {
-		start: toManualFormat(newStart),
+		start: toManualFormat(newStartDate),
 		end: toManualFormat(end),
 		tzoffset: new Date().getTimezoneOffset(),
 	})
 	await fetchWorkItems()
 }
 
-async function updateChildEnd(child, datetimeLocalStr) {
+async function updateChildEnd(child, newEndDate) {
 	const start = new Date(child.start * 1000)
-	const newEnd = new Date(datetimeLocalStr)
 	await api.updateWorkInterval(child.id, {
 		start: toManualFormat(start),
-		end: toManualFormat(newEnd),
+		end: toManualFormat(newEndDate),
 		tzoffset: new Date().getTimezoneOffset(),
 	})
 	await fetchWorkItems()
 }
 
-function onNewProjectChange() {
-	// update workName field project selection for next timer start
-}
-function onNewTagChange() {
-	// tag selection for next timer start
-}
+function onNewProjectChange() {}
+function onNewTagChange() {}
 
 onMounted(async () => {
 	const [projectsRes, tagsRes] = await Promise.all([api.getProjects(), api.getTags()])
@@ -502,10 +508,9 @@ onMounted(async () => {
 	tags.value = tagsRes.data.Tags
 	await fetchWorkItems()
 
-	// Initialize manual entry datetime to now
 	const now = new Date()
-	manualStart.value = localDatetimeStr(now)
-	manualEnd.value = localDatetimeStr(now)
+	manualStart.value = new Date(now)
+	manualEnd.value = new Date(now)
 })
 
 onUnmounted(() => {
@@ -547,9 +552,8 @@ onUnmounted(() => {
 	width: 80px;
 }
 
-.tt-datetime-input {
-	max-width: 180px;
-	font-size: 0.85em;
+#start-tracking {
+	flex-shrink: 0;
 }
 
 .wi-child-li {

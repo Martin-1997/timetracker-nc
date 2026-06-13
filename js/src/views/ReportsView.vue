@@ -1,9 +1,19 @@
 <template>
 	<div class="tt-view">
 		<div class="tt-date-range">
-			<input v-model="startDate" type="date" class="tt-input" @change="fetchReport">
+			<NcDateTimePicker
+				v-model="startDate"
+				type="date"
+				append-to-body
+				@update:model-value="fetchReport"
+			/>
 			<span>–</span>
-			<input v-model="endDate" type="date" class="tt-input" @change="fetchReport">
+			<NcDateTimePicker
+				v-model="endDate"
+				type="date"
+				append-to-body
+				@update:model-value="fetchReport"
+			/>
 			<div class="tt-quick-ranges">
 				<NcButton size="small" @click="setRange(0)">
 					Today
@@ -127,13 +137,13 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
+import { NcButton, NcLoadingIcon, NcDateTimePicker } from '@nextcloud/vue'
 import api from '../api/index.js'
-import { localDateStr, dateStrToUnixStart, dateStrToUnixEnd } from '../utils/date.js'
+import { startOfDay, endOfDay } from '../utils/date.js'
 
 const today = new Date()
-const startDate = ref(localDateStr(new Date(today.getTime() - 29 * 86400000)))
-const endDate = ref(localDateStr(today))
+const startDate = ref(new Date(today.getTime() - 29 * 86400000))
+const endDate = ref(new Date(today))
 
 const group1 = ref('project')
 const group2 = ref('user')
@@ -150,15 +160,15 @@ const totalDuration = computed(() => items.value.reduce((s, i) => s + i.totalDur
 
 function setRange(daysBack) {
 	const now = new Date()
-	startDate.value = localDateStr(new Date(now.getTime() - daysBack * 86400000))
-	endDate.value = localDateStr(now)
+	startDate.value = new Date(now.getTime() - daysBack * 86400000)
+	endDate.value = new Date(now)
 	fetchReport()
 }
 
 function setThisMonth() {
 	const now = new Date()
-	startDate.value = localDateStr(new Date(now.getFullYear(), now.getMonth(), 1))
-	endDate.value = localDateStr(now)
+	startDate.value = new Date(now.getFullYear(), now.getMonth(), 1)
+	endDate.value = new Date(now)
 	fetchReport()
 }
 
@@ -186,8 +196,8 @@ function formatDuration(seconds) {
 
 async function fetchReport() {
 	loading.value = true
-	const from = dateStrToUnixStart(startDate.value)
-	const to = dateStrToUnixEnd(endDate.value)
+	const from = startOfDay(startDate.value)
+	const to = endOfDay(endDate.value)
 	const { data } = await api.getReport({
 		name: '',
 		from,

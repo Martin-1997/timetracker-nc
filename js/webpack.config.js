@@ -1,6 +1,10 @@
 const { VueLoaderPlugin } = require('vue-loader')
 const webpack = require('webpack')
 const path = require('path')
+const fs = require('fs')
+
+const infoXml = fs.readFileSync(path.join(__dirname, '..', 'appinfo', 'info.xml'), 'utf8')
+const appVersion = (infoXml.match(/<version>([^<]+)<\/version>/) || [])[1] || '0.0.0'
 
 module.exports = {
   devtool: 'cheap-module-source-map',
@@ -34,7 +38,7 @@ module.exports = {
     new VueLoaderPlugin(),
     new webpack.DefinePlugin({
       appName: JSON.stringify('timetracker'),
-      appVersion: JSON.stringify('0.0.86'),
+      appVersion: JSON.stringify(appVersion),
     }),
   ],
 }

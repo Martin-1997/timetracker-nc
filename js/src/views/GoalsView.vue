@@ -21,7 +21,7 @@
 					<option value="monthly">Monthly</option>
 					<option value="yearly">Yearly</option>
 				</select>
-				<NcButton type="primary" native-type="submit" :disabled="!newHours">
+				<NcButton type="primary" native-type="submit" :disabled="!newProjectId || !newHours">
 					Add Goal
 				</NcButton>
 			</form>
@@ -109,8 +109,8 @@ async function fetchAll() {
 }
 
 async function addGoal() {
-	if (!newHours.value) return
-	await api.addGoal(newProjectId.value || null, newHours.value, newInterval.value)
+	if (!newProjectId.value || !newHours.value) return
+	await api.addGoal(newProjectId.value, newHours.value, newInterval.value)
 	newProjectId.value = ''
 	newHours.value = ''
 	newInterval.value = 'weekly'

@@ -28,19 +28,7 @@
 	flex-shrink: 0;
 }
 #start-tracking {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	width: 36px;
-	height: 36px;
-	padding: 0;
 	flex-shrink: 0;
-}
-#start-tracking .my-icon {
-	position: static;
-	margin: 0;
-	top: auto;
-	left: auto;
 }
 
 #app {
@@ -53,15 +41,6 @@
 }
 
 
-.play-button {
-
-	background-image: url(../img/play-button.svg);
-	background-position: 0px 0px;
-}
-.stop-button {
-	background-image: url(../img/stop-button.svg);
-	background-position: 0px 0px;
-}
 .clearfix:after { content: "\00A0"; display: block; clear: both; visibility: hidden; line-height: 0; height: 0;}
 .clearfix{ display: inline-block;}
 html[xmlns] .clearfix { display: block;}

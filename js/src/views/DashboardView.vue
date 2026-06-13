@@ -1,20 +1,30 @@
 <template>
 	<div class="tt-view">
 		<div class="tt-date-range">
-			<input v-model="startDate" type="date" class="tt-input" @change="fetchData">
+			<NcDateTimePicker
+				v-model="startDate"
+				type="date"
+				append-to-body
+				@update:model-value="fetchData"
+			/>
 			<span>–</span>
-			<input v-model="endDate" type="date" class="tt-input" @change="fetchData">
+			<NcDateTimePicker
+				v-model="endDate"
+				type="date"
+				append-to-body
+				@update:model-value="fetchData"
+			/>
 			<div class="tt-quick-ranges">
-				<NcButton size="small" @click="setRange(0, 0)">
+				<NcButton size="small" @click="setRange(0)">
 					Today
 				</NcButton>
-				<NcButton size="small" @click="setRange(6, 0)">
+				<NcButton size="small" @click="setRange(6)">
 					Last 7 days
 				</NcButton>
-				<NcButton size="small" @click="setRange(29, 0)">
+				<NcButton size="small" @click="setRange(29)">
 					Last 30 days
 				</NcButton>
-				<NcButton size="small" @click="setRange(89, 0)">
+				<NcButton size="small" @click="setRange(89)">
 					Last 90 days
 				</NcButton>
 				<NcButton size="small" @click="setThisMonth">
@@ -47,17 +57,17 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
+import { ref, onMounted, nextTick } from 'vue'
+import { NcButton, NcLoadingIcon, NcDateTimePicker } from '@nextcloud/vue'
 import { Chart, DoughnutController, ArcElement, Tooltip, Legend } from 'chart.js'
 import api from '../api/index.js'
-import { localDateStr, dateStrToUnixStart, dateStrToUnixEnd } from '../utils/date.js'
+import { startOfDay, endOfDay } from '../utils/date.js'
 
 Chart.register(DoughnutController, ArcElement, Tooltip, Legend)
 
 const today = new Date()
-const startDate = ref(localDateStr(new Date(today.getTime() - 29 * 86400000)))
-const endDate = ref(localDateStr(today))
+const startDate = ref(new Date(today.getTime() - 29 * 86400000))
+const endDate = ref(new Date(today))
 const loading = ref(false)
 const summary = ref('')
 
@@ -73,35 +83,38 @@ const COLORS = [
 
 function setRange(daysBack) {
 	const now = new Date()
-	startDate.value = localDateStr(new Date(now.getTime() - daysBack * 86400000))
-	endDate.value = localDateStr(now)
+	startDate.value = new Date(now.getTime() - daysBack * 86400000)
+	endDate.value = new Date(now)
 	fetchData()
 }
 
 function setThisMonth() {
 	const now = new Date()
-	startDate.value = localDateStr(new Date(now.getFullYear(), now.getMonth(), 1))
-	endDate.value = localDateStr(now)
+	startDate.value = new Date(now.getFullYear(), now.getMonth(), 1)
+	endDate.value = new Date(now)
 	fetchData()
 }
 
 function setThisYear() {
 	const now = new Date()
-	startDate.value = localDateStr(new Date(now.getFullYear(), 0, 1))
-	endDate.value = localDateStr(now)
+	startDate.value = new Date(now.getFullYear(), 0, 1)
+	endDate.value = new Date(now)
 	fetchData()
 }
 
 async function fetchData() {
 	loading.value = true
-	const from = dateStrToUnixStart(startDate.value)
-	const to = dateStrToUnixEnd(endDate.value)
+	const from = startOfDay(startDate.value)
+	const to = endOfDay(endDate.value)
 
-	const { data } = await api.getReport({ from, to, group1: 'client', group2: 'project', timegroup: '', name: '' })
-	loading.value = false
-
-	const items = data.items || []
-	buildCharts(items)
+	try {
+		const { data } = await api.getReport({ from, to, group1: 'client', group2: 'project', timegroup: '', name: '' })
+		loading.value = false
+		await nextTick()
+		buildCharts(data.items || [])
+	} catch (e) {
+		loading.value = false
+	}
 }
 
 function buildCharts(items) {

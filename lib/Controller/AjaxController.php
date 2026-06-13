@@ -394,6 +394,18 @@ class AjaxController extends Controller {
 			 $wi->setDuration($de->getTimestamp() - $dt->getTimestamp());
 		 }
 
+		if (isset($this->request->cost)) {
+			$cost = $this->request->cost;
+			if ($cost === '' || $cost === null) {
+				$wi->setCost(null);
+			} else {
+				$cost = str_replace(',', '.', $cost);
+				if (is_numeric($cost)) {
+					$wi->setCost((int)round($cost * 100));
+				}
+			}
+		}
+
 		$this->workIntervalMapper->update($wi);
 		$running = $this->workIntervalMapper->findAllRunning($this->userId);
 
@@ -1179,11 +1191,11 @@ class AjaxController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 */
-	public function addGoal() {
+	public function addGoal($projectId = null, $hours = null, $interval = 'weekly') {
 
-		$projectId = $this->request->projectId;
-		$hours = $this->request->hours;
-		$interval = $this->request->interval;
+		if (empty($projectId)) {
+			return new JSONResponse(['error' => 'Project is required'], Http::STATUS_BAD_REQUEST);
+		}
 
 		$g = $this->goalMapper->findByUserProject($this->userId, $projectId);
 		if ($g == null){
@@ -1194,10 +1206,9 @@ class AjaxController extends Controller {
 			$g->setHours($hours);
 			$g->setInterval($interval);
 			$this->goalMapper->insert($g);
-		} else 	if ($g != null){
+		} else {
 			return new JSONResponse(["Error" => "There can be only one goal per project"]);
 		}
-
 
 		return $this->getGoals();
 	}
