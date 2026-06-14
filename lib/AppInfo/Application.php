@@ -8,9 +8,6 @@ use \OCP\AppFramework\App;
 use \OCP\AppFramework\IAppContainer;
 
 
-use \OCA\TimeTracker\Controller\AjaxController;
-//use \OCA\TimeTracker\Service\AuthorService;
-//use \OCA\TimeTracker\Db\AuthorMapper;
 use OCA\TimeTracker\Db\WorkIntervalMapper;
 use OCA\TimeTracker\Controller\PageController;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;

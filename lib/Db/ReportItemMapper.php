@@ -251,7 +251,8 @@ class ReportItemMapper extends CompatibleMapper {
         if (empty($limit)){
             $limit = 10000;
         }
-        $sql = 'SELECT '.$selectItems.' where '.implode(" and ",$filters).' '.$group;
+        $whereClause = !empty($filters) ? 'WHERE ' . implode(' AND ', $filters) : '';
+        $sql = 'SELECT ' . $selectItems . ' ' . $whereClause . ' ' . $group;
         //var_dump($sql);
         // var_dump($params);
         return $this->findEntities($sql, $params, $limit, $start);
