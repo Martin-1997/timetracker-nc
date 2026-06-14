@@ -13,13 +13,13 @@
   "license": "ISC",
   "devDependencies": {
     "@nextcloud/browserslist-config": "^3.0.1",
-    "@vitejs/plugin-vue": "^5.2.4",
+    "@vitejs/plugin-vue": "^6.0.7",
     "@vue/compiler-sfc": "^3.5.0",
     "@vue/test-utils": "^2.4.11",
     "css-loader": "^5.0.1",
     "jsdom": "^26.1.0",
     "style-loader": "^2.0.0",
-    "vitest": "^3.2.6",
+    "vitest": "^4.1.8",
     "vue-loader": "^17.4.2",
     "webpack": "^5.94.0",
     "webpack-cli": "^4.2.0"
