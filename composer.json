@@ -8,8 +8,7 @@
             "name": "MTier Ltd."
         }
     ],
-    "require": {},
     "require-dev": {
-        "christophwurst/nextcloud": "^24.0"
+        "nextcloud/ocp": "^34.0"
     }
 }
