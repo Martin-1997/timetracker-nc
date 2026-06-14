@@ -45,52 +45,9 @@ class GoalControllerTest extends TestCase
     // Helpers
     // -------------------------------------------------------------------------
 
-    /**
-     * Build a configurable IRequest stub that exposes named parameters via the
-     * magic __get interface used throughout AjaxController.
-     *
-     * @param array<string, mixed> $params Parameters to expose as properties.
-     */
     private function createRequestStub(array $params = []): IRequest
     {
-        return new class($params) implements IRequest {
-            public function __construct(private array $params) {}
-
-            public function __get(string $name): mixed
-            {
-                return $this->params[$name] ?? null;
-            }
-
-            public function __isset(string $name): bool
-            {
-                return isset($this->params[$name]);
-            }
-
-            // --- IRequest interface stubs (unused in unit tests) ---
-            public function getHeader(string $name): string { return ''; }
-            public function getParam(string $key, $default = null) { return $this->params[$key] ?? $default; }
-            public function getParams(): array { return $this->params; }
-            public function getMethod(): string { return 'GET'; }
-            public function getUploadedFile(string $key) { return null; }
-            public function getEnv(string $key) { return null; }
-            public function getCookie(string $key) { return null; }
-            public function passesCSRFCheck(): bool { return true; }
-            public function passesStrictCookieCheck(): bool { return true; }
-            public function passesLaxCookieCheck(): bool { return true; }
-            public function getId(): string { return 'test-request-id'; }
-            public function getRemoteAddress(): string { return '127.0.0.1'; }
-            public function getServerProtocol(): string { return 'https'; }
-            public function getHttpProtocol(): string { return 'https'; }
-            public function getRequestUri(): string { return '/'; }
-            public function getRawPathInfo(): string { return '/'; }
-            public function getPathInfo() { return '/'; }
-            public function getScriptName(): string { return 'index.php'; }
-            public function isUserAgent(array $agent): bool { return false; }
-            public function getInsecureServerHost(): string { return 'localhost'; }
-            public function getServerHost(): string { return 'localhost'; }
-            public function throwDecodingExceptionIfAny(): void {}
-            public function getFormat(): ?string { return null; }
-        };
+        return new FakeRequest($params);
     }
 
     /**
