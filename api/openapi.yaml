@@ -1,0 +1,816 @@
+openapi: 3.1.0
+info:
+  title: TimeTracker API
+  version: 1.0.0
+  description: >
+    REST API for the Nextcloud TimeTracker app. All endpoints are under
+    /apps/timetracker/api/v1/ and require an authenticated Nextcloud session.
+
+servers:
+  - url: /apps/timetracker/api/v1
+
+components:
+  schemas:
+    WorkInterval:
+      type: object
+      properties:
+        id:          { type: integer }
+        name:        { type: string }
+        details:     { type: [string, 'null'] }
+        projectId:   { type: [integer, 'null'] }
+        projectName: { type: [string, 'null'] }
+        projectColor:{ type: [string, 'null'] }
+        userUid:     { type: string }
+        start:       { type: integer, description: Unix timestamp }
+        duration:    { type: integer, description: Seconds }
+        running:     { type: integer, enum: [0, 1] }
+        cost:        { type: [integer, 'null'], description: Cost in cents }
+        tags:        { type: array, items: { $ref: '#/components/schemas/Tag' } }
+
+    Client:
+      type: object
+      properties:
+        id:        { type: integer }
+        name:      { type: string }
+        createdAt: { type: integer }
+
+    Project:
+      type: object
+      properties:
+        id:               { type: integer }
+        name:             { type: string }
+        color:            { type: string }
+        locked:           { type: integer, enum: [0, 1] }
+        archived:         { type: integer, enum: [0, 1] }
+        clientId:         { type: [integer, 'null'] }
+        createdByUserUid: { type: string }
+        createdAt:        { type: integer }
+        allowedtags:      { type: array, items: { $ref: '#/components/schemas/Tag' } }
+
+    ProjectTableRow:
+      type: object
+      properties:
+        id:           { type: integer }
+        name:         { type: string }
+        color:        { type: string }
+        locked:       { type: integer }
+        archived:     { type: integer }
+        client:       { type: [string, 'null'] }
+        clientId:     { type: [integer, 'null'] }
+        allowedTags:  { type: array, items: { $ref: '#/components/schemas/Tag' } }
+        allowedUsers: { type: array, items: { type: string } }
+
+    Tag:
+      type: object
+      properties:
+        id:        { type: integer }
+        name:      { type: string }
+        userUid:   { type: string }
+        createdAt: { type: integer }
+
+    Goal:
+      type: object
+      properties:
+        id:                      { type: integer }
+        userUid:                 { type: string }
+        projectId:               { type: integer }
+        projectName:             { type: [string, 'null'] }
+        hours:                   { type: number }
+        interval:                { type: string, enum: [weekly, monthly] }
+        createdAt:               { type: integer }
+        workedHoursCurrentPeriod:{ type: number }
+        debtHours:               { type: number }
+        remainingHours:          { type: number }
+        totalRemainingHours:     { type: number }
+
+    ReportItem:
+      type: object
+      properties:
+        id:            { type: integer }
+        name:          { type: string }
+        project:       { type: [string, 'null'] }
+        client:        { type: [string, 'null'] }
+        userUid:       { type: string }
+        time:          { type: integer, description: Unix timestamp of period start }
+        totalDuration: { type: integer, description: Seconds }
+        cost:          { type: [integer, 'null'], description: Cost in cents }
+
+    Timeline:
+      type: object
+      properties:
+        id:            { type: integer }
+        userUid:       { type: string }
+        status:        { type: string }
+        totalDuration: { type: integer }
+        timeInterval:  { type: string }
+        filterProjects:{ type: string }
+        filterClients: { type: string }
+        group1:        { type: string }
+        group2:        { type: string }
+        timeGroup:     { type: string }
+        createdAt:     { type: integer }
+
+    Error:
+      type: object
+      properties:
+        Error: { type: string }
+
+paths:
+  # ── Work Intervals ────────────────────────────────────────────────────────
+  /work-intervals:
+    get:
+      summary: List work intervals grouped by day
+      operationId: listWorkIntervals
+      parameters:
+        - name: from
+          in: query
+          schema: { type: integer }
+          description: Start Unix timestamp (exclusive)
+        - name: to
+          in: query
+          schema: { type: integer }
+          description: End Unix timestamp (exclusive)
+        - name: tzoffset
+          in: query
+          schema: { type: integer }
+          description: Client timezone offset in minutes (from new Date().getTimezoneOffset())
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  WorkIntervals: { type: array, items: { $ref: '#/components/schemas/WorkInterval' } }
+                  running:       { type: array, items: { $ref: '#/components/schemas/WorkInterval' } }
+                  days:
+                    type: object
+                    description: Map of date string → map of task name → {children, totalTime}
+                  now: { type: integer, description: Current Unix timestamp }
+
+    post:
+      summary: Add a work interval manually
+      operationId: createWorkInterval
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:     { type: string }
+                start:    { type: string, description: "Format: dd/mm/yy HH:MM" }
+                end:      { type: string, description: "Format: dd/mm/yy HH:MM" }
+                tzoffset: { type: integer }
+                details:  { type: string }
+      responses:
+        '200':
+          description: Updated running intervals
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  WorkIntervals: { type: array, items: { $ref: '#/components/schemas/WorkInterval' } }
+
+  /work-intervals/{id}:
+    put:
+      summary: Update a work interval
+      operationId: updateWorkInterval
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:     { type: string, maxLength: 255 }
+                details:  { type: string, maxLength: 1024 }
+                projectId:{ type: [integer, 'null'] }
+                tagId:    { oneOf: [{ type: string }, { type: array, items: { type: integer } }] }
+                start:    { type: string, description: "Format: dd/mm/yy HH:MM" }
+                end:      { type: string, description: "Format: dd/mm/yy HH:MM" }
+                tzoffset: { type: integer }
+                cost:     { type: [string, 'null'], description: Decimal string, comma or dot separator }
+      responses:
+        '200':
+          description: Updated running intervals
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  WorkIntervals: { type: array, items: { $ref: '#/components/schemas/WorkInterval' } }
+
+    delete:
+      summary: Delete a work interval
+      operationId: deleteWorkInterval
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Updated running intervals
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  WorkIntervals: { type: array, items: { $ref: '#/components/schemas/WorkInterval' } }
+
+  # ── Timer ─────────────────────────────────────────────────────────────────
+  /timer/start:
+    post:
+      summary: Start timer for a task
+      operationId: startTimer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:      { type: string, maxLength: 255 }
+                projectId: { type: [integer, 'null'] }
+                tags:      { type: string, description: Comma-separated tag IDs }
+      responses:
+        '200':
+          description: Created work interval
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  WorkIntervals: { $ref: '#/components/schemas/WorkInterval' }
+                  running:       { type: integer, enum: [1] }
+
+  /timer/stop:
+    post:
+      summary: Stop all running timers
+      operationId: stopTimer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, maxLength: 255, description: New name; ignored when 'no description' }
+      responses:
+        '200':
+          description: Stopped work intervals
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  WorkIntervals: { type: array, items: { $ref: '#/components/schemas/WorkInterval' } }
+
+  # ── Clients ───────────────────────────────────────────────────────────────
+  /clients:
+    get:
+      summary: List clients
+      operationId: listClients
+      parameters:
+        - name: term
+          in: query
+          schema: { type: string }
+          description: Search term (prefix match on name)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Clients: { type: array, items: { $ref: '#/components/schemas/Client' } }
+
+    post:
+      summary: Create a client
+      operationId: createClient
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+      responses:
+        '200':
+          description: Updated client list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Clients: { type: array, items: { $ref: '#/components/schemas/Client' } }
+
+  /clients/{id}:
+    put:
+      summary: Rename a client
+      operationId: updateClient
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+      responses:
+        '200':
+          description: Updated client list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Clients: { type: array, items: { $ref: '#/components/schemas/Client' } }
+
+    delete:
+      summary: Remove client association for current user
+      operationId: deleteClient
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Updated client list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Clients: { type: array, items: { $ref: '#/components/schemas/Client' } }
+
+  # ── Projects ──────────────────────────────────────────────────────────────
+  /projects:
+    get:
+      summary: List projects
+      operationId: listProjects
+      parameters:
+        - name: view
+          in: query
+          schema: { type: string, enum: [table] }
+          description: Pass 'table' for the admin table view with per-project user/tag details
+        - name: archived
+          in: query
+          schema: { type: integer, enum: [0, 1] }
+          description: Include archived projects (table view only)
+        - name: term
+          in: query
+          schema: { type: string }
+          description: Search term (prefix match on name)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: object
+                    description: Standard project list
+                    properties:
+                      Projects: { type: array, items: { $ref: '#/components/schemas/Project' } }
+                  - type: object
+                    description: Table view (view=table)
+                    properties:
+                      items: { type: array, items: { $ref: '#/components/schemas/ProjectTableRow' } }
+                      total: { type: integer }
+
+    post:
+      summary: Create a project
+      operationId: createProject
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:     { type: string }
+                clientId: { type: [integer, 'null'] }
+                color:    { type: string, description: CSS color, default '#ffffff' }
+      responses:
+        '200':
+          description: Updated project list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Projects: { type: array, items: { $ref: '#/components/schemas/Project' } }
+
+  /projects/{id}:
+    put:
+      summary: Update a project
+      operationId: updateProject
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:         { type: string }
+                color:        { type: string }
+                clientId:     { type: [integer, 'null'] }
+                locked:       { type: integer, enum: [0, 1], description: Admin only }
+                archived:     { type: integer, enum: [0, 1] }
+                allowedTags:  { type: string, description: Comma-separated tag IDs (admin only) }
+                allowedUsers: { type: string, description: Comma-separated user UIDs (admin only) }
+      responses:
+        '200':
+          description: Updated project list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Projects: { type: array, items: { $ref: '#/components/schemas/Project' } }
+
+    delete:
+      summary: Delete project and all its data (admin only)
+      operationId: deleteProject
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Updated project list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Projects: { type: array, items: { $ref: '#/components/schemas/Project' } }
+
+  # ── Tags ──────────────────────────────────────────────────────────────────
+  /tags:
+    get:
+      summary: List tags
+      operationId: listTags
+      parameters:
+        - name: workItem
+          in: query
+          schema: { type: integer }
+          description: Work interval ID; filters to tags allowed by the interval's locked project
+        - name: q
+          in: query
+          schema: { type: string }
+          description: Case-insensitive substring filter
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Tags: { type: array, items: { $ref: '#/components/schemas/Tag' } }
+
+    post:
+      summary: Create a tag
+      operationId: createTag
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+      responses:
+        '200':
+          description: Updated tag list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Tags: { type: array, items: { $ref: '#/components/schemas/Tag' } }
+
+  /tags/{id}:
+    put:
+      summary: Rename a tag
+      operationId: updateTag
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+      responses:
+        '200':
+          description: Updated tag list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Tags: { type: array, items: { $ref: '#/components/schemas/Tag' } }
+
+    delete:
+      summary: Delete a tag and remove it from all work intervals
+      operationId: deleteTag
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Updated tag list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Tags: { type: array, items: { $ref: '#/components/schemas/Tag' } }
+
+  # ── Goals ─────────────────────────────────────────────────────────────────
+  /goals:
+    get:
+      summary: List goals with progress metrics
+      operationId: listGoals
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Goals: { type: array, items: { $ref: '#/components/schemas/Goal' } }
+
+    post:
+      summary: Create a goal
+      operationId: createGoal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [projectId]
+              properties:
+                projectId: { type: integer }
+                hours:     { type: number }
+                interval:  { type: string, enum: [weekly, monthly], default: weekly }
+      responses:
+        '200':
+          description: Updated goal list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Goals: { type: array, items: { $ref: '#/components/schemas/Goal' } }
+
+  /goals/{id}:
+    delete:
+      summary: Delete a goal
+      operationId: deleteGoal
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Updated goal list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Goals: { type: array, items: { $ref: '#/components/schemas/Goal' } }
+
+  # ── Report ────────────────────────────────────────────────────────────────
+  /report:
+    get:
+      summary: Generate a report
+      operationId: getReport
+      parameters:
+        - name: name
+          in: query
+          schema: { type: string }
+          description: User UID to report on (defaults to current user)
+        - name: from
+          in: query
+          schema: { type: integer }
+          description: Start Unix timestamp (exclusive)
+        - name: to
+          in: query
+          schema: { type: integer }
+          description: End Unix timestamp (exclusive)
+        - name: timegroup
+          in: query
+          schema: { type: string, enum: [day, week, month, year] }
+        - name: group1
+          in: query
+          schema: { type: string, enum: [name, project, client, userUid] }
+        - name: group2
+          in: query
+          schema: { type: string, enum: [name, project, client, userUid] }
+        - name: filterProjectId
+          in: query
+          schema: { type: string }
+          description: Comma-separated project IDs
+        - name: filterClientId
+          in: query
+          schema: { type: string }
+          description: Comma-separated client IDs
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items: { type: array, items: { $ref: '#/components/schemas/ReportItem' } }
+                  total: { type: integer }
+
+  # ── Timelines ─────────────────────────────────────────────────────────────
+  /timelines:
+    get:
+      summary: List timelines for current user
+      operationId: listTimelines
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Timelines: { type: array, items: { $ref: '#/components/schemas/Timeline' } }
+                  total: { type: integer }
+
+    post:
+      summary: Create a timeline snapshot from a report
+      operationId: createTimeline
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:           { type: string }
+                from:           { type: integer }
+                to:             { type: integer }
+                timegroup:      { type: string, enum: [day, week, month, year] }
+                group1:         { type: string }
+                group2:         { type: string }
+                filterProjectId:{ type: string }
+                filterClientId: { type: string }
+      responses:
+        '200':
+          description: Created timeline
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Timeline: { $ref: '#/components/schemas/Timeline' }
+
+  /timelines-admin:
+    get:
+      summary: List all timelines (admin only)
+      operationId: listTimelinesAdmin
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Timelines: { type: array, items: { $ref: '#/components/schemas/Timeline' } }
+                  total: { type: integer }
+
+  /timelines/{id}:
+    put:
+      summary: Update timeline status
+      operationId: updateTimeline
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string }
+      responses:
+        '200':
+          description: Updated timeline
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Timeline: { $ref: '#/components/schemas/Timeline' }
+
+    delete:
+      summary: Delete a timeline (owner only)
+      operationId: deleteTimeline
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Updated timeline list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Timelines: { type: array, items: { $ref: '#/components/schemas/Timeline' } }
+                  total: { type: integer }
+
+  /timelines/{id}/download:
+    get:
+      summary: Download timeline as CSV
+      operationId: downloadTimeline
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: CSV file
+          content:
+            text/csv:
+              schema: { type: string }
+
+  /timelines/{id}/email:
+    post:
+      summary: Email a timeline as CSV attachment
+      operationId: emailTimeline
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, subject, content]
+              properties:
+                email:   { type: string, description: Semicolon-separated email addresses }
+                subject: { type: string }
+                content: { type: string }
+      responses:
+        '200':
+          description: Email sent
+          content:
+            application/json:
+              schema: { type: object }
