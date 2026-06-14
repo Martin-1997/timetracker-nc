@@ -68,17 +68,19 @@ class TimelineController extends BaseApiController {
      * @NoAdminRequired
      */
     public function create(){
-        $name = $this->request->name;
-        $from = $this->request->from;
-        $timegroup = $this->request->timegroup;
-        $to = $this->request->to;
-        if (isset($this->request->filterProjectId) && !empty($this->request->filterProjectId)){
-            $filterProjectId = explode(",",$this->request->filterProjectId);
+        $name = (string)($this->request->getParam('name', ''));
+        $from = $this->request->getParam('from');
+        $timegroup = $this->request->getParam('timegroup');
+        $to = $this->request->getParam('to');
+        $filterProjectIdParam = $this->request->getParam('filterProjectId');
+        if (!empty($filterProjectIdParam)){
+            $filterProjectId = explode(",", $filterProjectIdParam);
         } else {
             $filterProjectId = [];
         }
-        if (isset($this->request->filterClientId) && !empty($this->request->filterClientId)){
-            $filterClientId = explode(",",$this->request->filterClientId);
+        $filterClientIdParam = $this->request->getParam('filterClientId');
+        if (!empty($filterClientIdParam)){
+            $filterClientId = explode(",", $filterClientIdParam);
         } else {
             $filterClientId = [];
         }
@@ -109,15 +111,15 @@ class TimelineController extends BaseApiController {
         }
 
         $filterTagId = [];
-        $groupOn1 = $this->request->group1;
-        $groupOn2 = $this->request->group2;
+        $groupOn1 = $this->request->getParam('group1');
+        $groupOn2 = $this->request->getParam('group2');
         $items = $this->reportItemMapper->report($name, $from, $to, $filterProjectId, $filterClientId, $filterTagId, $timegroup, $groupOn1, $groupOn2, $this->isThisAdminUser(), 0, 1000);
 
         $timeline = new Timeline();
         $timeline->setUserUid($this->userId);
-        $timeline->setGroup1($this->request->group1);
-        $timeline->setGroup2($this->request->group2);
-        $timeline->setTimeGroup($this->request->timegroup);
+        $timeline->setGroup1($groupOn1);
+        $timeline->setGroup2($groupOn2);
+        $timeline->setTimeGroup($timegroup);
         $timeline->setFilterProjects(implode(', ',$filterProjectId));
         $timeline->setFilterClients(implode(', ',$filterClientId));
         $timeline->setTimeInterval($this->l10n->l('date', $from) . ' - '. $this->l10n->l('date', $to));
@@ -153,7 +155,7 @@ class TimelineController extends BaseApiController {
      */
     public function update(int $id){
         $timeline = $this->timelineMapper->find($id);
-        $timeline->setStatus($this->request->status);
+        $timeline->setStatus($this->request->getParam('status'));
         $this->timelineMapper->update($timeline);
         return new JSONResponse(["Timeline" => $timeline]);
     }
@@ -215,10 +217,10 @@ class TimelineController extends BaseApiController {
         }
         $user = $te[0]->userUid;
 
-        $email = $this->request->email;
-        $emails = explode(';',$email);
-        $subject = $this->request->subject;
-        $content = $this->request->content;
+        $email = (string)($this->request->getParam('email', ''));
+        $emails = explode(';', $email);
+        $subject = $this->request->getParam('subject');
+        $content = $this->request->getParam('content');
 
         // output headers so that the file is downloaded rather than displayed
         header('Content-Type: text/csv; charset=utf-8');

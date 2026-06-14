@@ -97,14 +97,12 @@ class ProjectController extends BaseApiController {
      * @NoAdminRequired
      */
     public function create() {
-        $name = $this->request->name;
-        $clientId = null;
-        if (isset($this->request->clientId)) {
-            $clientId = $this->request->clientId;
-        }
+        $name = (string)($this->request->getParam('name', ''));
+        $clientId = $this->request->getParam('clientId');
         $color = '#ffffff';
-        if (isset($this->request->color) && !empty($this->request->color)) {
-            $color = $this->request->color;
+        $colorParam = $this->request->getParam('color');
+        if (!empty($colorParam)) {
+            $color = $colorParam;
         }
         if (trim($name) == '') {
             return;
@@ -145,8 +143,9 @@ class ProjectController extends BaseApiController {
         if ($p == null) {
             return;
         }
-        if (isset($this->request->name)) {
-            $name = $this->request->name;
+        $name = $this->request->getParam('name');
+        if ($name !== null) {
+            $name = (string)$name;
             if (trim($name) != '') {
                 $old = $this->projectMapper->findByName($name);
                 if ($old != null && $old->id != $id) {
@@ -155,26 +154,26 @@ class ProjectController extends BaseApiController {
                 $p->setName($name);
             }
         }
-        if (isset($this->request->color)) {
-            $color = $this->request->color;
+        $color = $this->request->getParam('color');
+        if ($color !== null) {
             $p->setColor($color);
         }
-        if (isset($this->request->clientId)) {
-            $clientId = $this->request->clientId;
+        $clientId = $this->request->getParam('clientId');
+        if ($clientId !== null) {
             $p->setClientId($clientId);
         }
-        if (isset($this->request->locked) && $this->isThisAdminUser()) {
-            $locked = $this->request->locked;
+        $locked = $this->request->getParam('locked');
+        if ($locked !== null && $this->isThisAdminUser()) {
             $p->setLocked($locked);
         }
 
-        if (isset($this->request->allowedTags) && $this->isThisAdminUser()) {
-            $allowedTags = $this->request->allowedTags;
+        $allowedTags = $this->request->getParam('allowedTags');
+        if ($allowedTags !== null && $this->isThisAdminUser()) {
             $a = explode(',', $allowedTags);
             $this->tagMapper->allowedTags($id, $a);
         }
-        if (isset($this->request->allowedUsers) && $this->isThisAdminUser()) {
-            $allowedUsers = $this->request->allowedUsers;
+        $allowedUsers = $this->request->getParam('allowedUsers');
+        if ($allowedUsers !== null && $this->isThisAdminUser()) {
             $a = explode(',', $allowedUsers);
             $this->userToProjectMapper->deleteAllForProject($id);
             foreach ($a as $u) {
@@ -189,9 +188,9 @@ class ProjectController extends BaseApiController {
             }
         }
 
-        if (isset($this->request->archived) && $p->getArchived() != $this->request->archived) {
+        $archived = $this->request->getParam('archived');
+        if ($archived !== null && $p->getArchived() != $archived) {
             if (($this->isThisAdminUser() || $p->createdByUserUid == $this->userId)) {
-                $archived = $this->request->archived;
                 $p->setArchived($archived);
             } else {
                 return new JSONResponse(["Error" => "You cannot archive/unarchive projects created by somebody else"]);

@@ -95,15 +95,17 @@ class TimerController extends BaseApiController {
 
 	public function start() {
 		//$this->endTimer();
+		$name = (string)($this->request->getParam('name', ''));
 		$projectId = null;
-		$name = $this->request->name;
-		if (isset($this->request->projectId) && (!empty($this->request->projectId))){
-			$projectId = $this->request->projectId;
+		$projectIdParam = $this->request->getParam('projectId');
+		if (!empty($projectIdParam)) {
+			$projectId = $projectIdParam;
 		}
 
 		$tags = null;
-		if (isset($this->request->tags) && (!empty($this->request->tags))){
-			$tags = $this->request->tags;
+		$tagsParam = $this->request->getParam('tags');
+		if (!empty($tagsParam)) {
+			$tags = $tagsParam;
 		}
 
 		if (strlen($name) > 255){
@@ -166,7 +168,7 @@ class TimerController extends BaseApiController {
 	 */
 
 	public function stop() {
-		$name = $this->request->name;
+		$name = (string)($this->request->getParam('name', ''));
 		if (strlen($name) > 255){
 			return new JSONResponse(["Error" => "Name too long"]);
 		}
@@ -208,20 +210,23 @@ class TimerController extends BaseApiController {
 
 		$wi = $this->workIntervalMapper->find($id);
 
-		if (isset($this->request->name)) {
-			if (strlen($this->request->name) > 255){
+		$name = $this->request->getParam('name');
+		if ($name !== null) {
+			if (strlen((string)$name) > 255){
 				return new JSONResponse(["Error" => "Name too long"]);
 			}
-			$wi->setName($this->request->name);
+			$wi->setName($name);
 		}
-		if (isset($this->request->details)) {
-			if (strlen($this->request->details) > 1024){
+		$details = $this->request->getParam('details');
+		if ($details !== null) {
+			if (strlen((string)$details) > 1024){
 				return new JSONResponse(["Error" => "Details too long"]);
 			}
-			$wi->setDetails($this->request->details);
+			$wi->setDetails($details);
 		}
-		if (isset($this->request->projectId)) {
-			$wi->setProjectId($this->request->projectId);
+		$projectId = $this->request->getParam('projectId');
+		if ($projectId !== null) {
+			$wi->setProjectId($projectId);
 			if ($wi->projectId != null){
 				$project = $this->projectMapper->find($wi->projectId);
 				$locked = $project->locked;
@@ -249,13 +254,13 @@ class TimerController extends BaseApiController {
 			}
 		}
 
-		 if (isset($this->request->tagId)) {
-			 if (is_array($this->request->tagId)){
-				$tags = $this->request->tagId;
-			 } else {
-
-				 $tags = \explode(",", $this->request->tagId);
-			 }
+		$tagIdParam = $this->request->getParam('tagId');
+		if ($tagIdParam !== null) {
+			if (is_array($tagIdParam)){
+				$tags = $tagIdParam;
+			} else {
+				$tags = \explode(",", $tagIdParam);
+			}
 			$this->workIntervalToTagMapper->deleteAllForWorkInterval($id);
 			$project = null;
 			$locked = 0;
@@ -281,29 +286,27 @@ class TimerController extends BaseApiController {
 				$newWiToTag->setWorkIntervalId($id);
 				$newWiToTag->setTagId($tag);
 				$newWiToTag->setCreatedAt(time());
-				//var_dump($newWiToTag);
 				$this->workIntervalToTagMapper->insert($newWiToTag);
 
 			}
-		 }
-		 if (isset($this->request->start)) {
-			$tzoffset = 0;
-			if (isset($this->request->tzoffset)) {
-				$tzoffset = $this->request->tzoffset;
-			}
+		}
+		$startParam = $this->request->getParam('start');
+		if ($startParam !== null) {
+			$tzoffset = (int)($this->request->getParam('tzoffset', 0));
 
-			 date_default_timezone_set('UTC');
-			 $dt = \DateTime::createFromFormat ( "d/m/y H:i",$this->request->start);
-			 $dt->setTimeZone(new \DateTimeZone('UTC'));
-			 $wi->setStart($dt->getTimestamp()+$tzoffset*60);
-			 $de = \DateTime::createFromFormat ( "d/m/y H:i",$this->request->end);
-			 $de->setTimeZone(new \DateTimeZone('UTC'));
-			 $wi->setDuration($de->getTimestamp() - $dt->getTimestamp());
-		 }
+			date_default_timezone_set('UTC');
+			$dt = \DateTime::createFromFormat("d/m/y H:i", $startParam);
+			$dt->setTimeZone(new \DateTimeZone('UTC'));
+			$wi->setStart($dt->getTimestamp()+$tzoffset*60);
+			$endParam = $this->request->getParam('end');
+			$de = \DateTime::createFromFormat("d/m/y H:i", $endParam);
+			$de->setTimeZone(new \DateTimeZone('UTC'));
+			$wi->setDuration($de->getTimestamp() - $dt->getTimestamp());
+		}
 
-		if (isset($this->request->cost)) {
-			$cost = $this->request->cost;
-			if ($cost === '' || $cost === null) {
+		$cost = $this->request->getParam('cost');
+		if ($cost !== null) {
+			if ($cost === '') {
 				$wi->setCost(null);
 			} else {
 				$cost = str_replace(',', '.', $cost);
@@ -331,78 +334,50 @@ class TimerController extends BaseApiController {
 		$wi->setUserUid($this->userId);
 		$wi->setRunning(0);
 
-		if (isset($this->request->name)) {
-			$wi->setName($this->request->name);
+		$name = $this->request->getParam('name');
+		if ($name !== null) {
+			$wi->setName($name);
 		}
-		if (isset($this->request->details)) {
-			if (strlen($this->request->details) > 1024){
+		$details = $this->request->getParam('details');
+		if ($details !== null) {
+			if (strlen((string)$details) > 1024){
 				return new JSONResponse(["Error" => "Details too long"]);
 			}
-			$wi->setDetails($this->request->details);
+			$wi->setDetails($details);
 		}
-		if (isset($this->request->projectId)) {
-			$wi->setProjectId($this->request->projectId);
-			if ($wi->projectId != null){
-				$project = $this->projectMapper->find($wi->projectId);
-				$locked = $project->locked;
-				if($locked){
-					$allowedTags = $this->tagMapper->findAllAlowedForProject($project->id);
-					$allowedTagsIds = array_map(function($tag) { return $tag->id;}, $allowedTags);
-					$currentTags = $this->workIntervalToTagMapper->findAllForWorkInterval($id);
-					$currentTagsIds = array_map(function($witag) { return $witag->tagId;}, $currentTags);
-					$newTags = array_intersect($allowedTagsIds,$currentTagsIds);
-
-					$this->workIntervalToTagMapper->deleteAllForWorkInterval($id);
-					foreach($newTags as $tag){
-						if (empty($tag))
-							continue;
-						$newWiToTag = new WorkIntervalToTag();
-						$newWiToTag->setWorkIntervalId($id);
-						$newWiToTag->setTagId($tag);
-						$newWiToTag->setCreatedAt(time());
-						$this->workIntervalToTagMapper->insert($newWiToTag);
-
-					}
-
-				}
-
-			}
+		$projectId = $this->request->getParam('projectId');
+		if ($projectId !== null) {
+			$wi->setProjectId($projectId);
 		}
-		 if (isset($this->request->tagId)) {
-			$tags = \explode(",", $this->request->tagId);
-			$this->workIntervalToTagMapper->deleteAllForWorkInterval($id);
-			$project = null;
-			$locked = 0;
+		$startParam = $this->request->getParam('start');
+		if ($startParam !== null) {
+			$tzoffset = (int)($this->request->getParam('tzoffset', 0));
 
+			date_default_timezone_set('UTC');
+			$dt = \DateTime::createFromFormat("d/m/y H:i", $startParam);
+			$dt->setTimeZone(new \DateTimeZone('UTC'));
+			$wi->setStart($dt->getTimestamp()+$tzoffset*60);
+			$endParam = $this->request->getParam('end');
+			$de = \DateTime::createFromFormat("d/m/y H:i", $endParam);
+			$de->setTimeZone(new \DateTimeZone('UTC'));
+			$wi->setDuration($de->getTimestamp() - $dt->getTimestamp());
+		}
 
+		$this->workIntervalMapper->insert($wi);
+
+		$tagIdParam = $this->request->getParam('tagId');
+		if ($tagIdParam !== null) {
+			$tags = \explode(",", $tagIdParam);
 			foreach($tags as $tag){
 				if (empty($tag))
 					continue;
 				$newWiToTag = new WorkIntervalToTag();
-				$newWiToTag->setWorkIntervalId($id);
+				$newWiToTag->setWorkIntervalId($wi->id);
 				$newWiToTag->setTagId($tag);
 				$newWiToTag->setCreatedAt(time());
-				//var_dump($newWiToTag);
 				$this->workIntervalToTagMapper->insert($newWiToTag);
-
 			}
-		 }
-		 if (isset($this->request->start)) {
-			$tzoffset = 0;
-			if (isset($this->request->tzoffset)) {
-				$tzoffset = $this->request->tzoffset;
-			}
-
-			 date_default_timezone_set('UTC');
-			 $dt = \DateTime::createFromFormat ( "d/m/y H:i",$this->request->start);
-			 $dt->setTimeZone(new \DateTimeZone('UTC'));
-			 $wi->setStart($dt->getTimestamp()+$tzoffset*60);
-			 $de = \DateTime::createFromFormat ( "d/m/y H:i",$this->request->end);
-			 $de->setTimeZone(new \DateTimeZone('UTC'));
-			 $wi->setDuration($de->getTimestamp() - $dt->getTimestamp());
-		 }
-
-		$this->workIntervalMapper->insert($wi);
+		}
 
 		$running = $this->workIntervalMapper->findAllRunning($this->userId);
 

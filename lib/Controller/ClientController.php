@@ -41,7 +41,7 @@ class ClientController extends BaseApiController {
      * @NoAdminRequired
      */
     public function create() {
-        $name = $this->request->name;
+        $name = (string)($this->request->getParam('name', ''));
         if (trim($name) == '') {
             return;
         }
@@ -73,7 +73,7 @@ class ClientController extends BaseApiController {
      * @NoAdminRequired
      */
     public function update(int $id) {
-        $name = $this->request->name;
+        $name = (string)($this->request->getParam('name', ''));
         $c = $this->clientMapper->find($id);
         if ($c == null) {
             return;
