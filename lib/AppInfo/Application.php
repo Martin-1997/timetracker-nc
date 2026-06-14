@@ -2,17 +2,9 @@
 
 namespace OCA\TimeTracker\AppInfo;
 
-require_once __DIR__ . '/../../vendor/autoload.php';
-
 use \OCP\AppFramework\App;
-use \OCP\AppFramework\IAppContainer;
-
-
 use OCA\TimeTracker\Db\WorkIntervalMapper;
-use OCA\TimeTracker\Controller\PageController;
-use Symfony\Component\EventDispatcher\EventDispatcherInterface;
-
-use OCP\IL10N;
+use OCA\TimeTracker\Db\ReportItemMapper;
 
 class Application extends App {
 
@@ -44,7 +36,7 @@ class Application extends App {
       );
     });
     $container->registerService('ReportItemMapper', function($c){
-      return new WorkIntervalMapper(
+      return new ReportItemMapper(
         $c->query('ServerContainer')->getDatabaseConnection()
       );
     });
